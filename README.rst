@@ -3,13 +3,13 @@ Postladim
 
 A simple python package for analyzing LADiM output
 
-particlefile defines a class ParticleFile
-for reading LADiM output.
+Defines a class ParticleFile for reading LADiM output.
+Both LADiM version 1 and 2.
 
 cellcount defines a function for counting particles in cells
 
-The ladim/examples directories shows examples on how to use
-this with matplotlib for simple plotting and animation.
+The example directories in LADiM give usage examples.
 
-The track script is an example of how to extract single
-trajectories from the output.
+This package used to be part of the LADiM package.
+Presently the documentation can be found in `ladim readthedocs
+<https://ladim.readthedocs.io/en/master>`

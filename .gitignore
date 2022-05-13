@@ -1,0 +1,13 @@
+# Python stuff
+*.pyc
+build/
+.mypy
+__pycache__/
+dist/
+*.egg-info/
+
+# Hidden directories
+.*/
+
+# Emacs noise
+*~
