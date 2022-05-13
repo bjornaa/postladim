@@ -114,7 +114,7 @@ class InstanceVariable:
         for n in range(self.num_times):
             data[n, self.pid[self.start[n] : self.end[n]]] = self._sel_time_index(n)
         # coords = dict(time=self.time, pid=self.particles)
-        coords = [("time", self.time), ("pid", self.particles)]
+        coords = [("time", self.time.values), ("pid", self.particles)]
         V = xr.DataArray(data=data, coords=coords, dims=("time", "pid"))
         return V
 

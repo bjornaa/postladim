@@ -158,7 +158,7 @@ def test_sel(particle_file):
         with pytest.raises(TypeError):
             X.sel("1970-01-01 02")
 
-@pytest.mark.skip("variable.full is not working (anymore?)")
+#@pytest.mark.skip("variable.full is not working (anymore?)")
 def test_full(particle_file):
     with ParticleFile(particle_file) as pf:
         X = pf.X
