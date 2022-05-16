@@ -22,23 +22,23 @@ def particle_file():
     #  -   -  23
     #
     pfile = "test.nc"
-    nparticles = 3
+    num_particles = 3
     X = np.array(
         [[0, np.nan, np.nan], [1, 11, np.nan], [2, np.nan, 22], [np.nan, np.nan, 23]]
     )
     Y = np.array(
         [[2, np.nan, np.nan], [3, 8, np.nan], [4, np.nan, 9], [np.nan, np.nan, 10]]
     )
-    ntimes = X.shape[0]
-    pid = np.multiply.outer(ntimes * [1], list(range(nparticles)))
+    num_times = X.shape[0]
+    pid = np.multiply.outer(num_times * [1], list(range(num_particles)))
     pid[np.isnan(X)] = -99  # Undefined integer
-    time = 3600 * np.arange(ntimes)  # hourly timesteps
+    time = 3600 * np.arange(num_times)  # hourly timesteps
     count = (np.ones(np.shape(X)) - np.isnan(X)).sum(axis=1)
     with Dataset(pfile, mode="w") as nc:
         # Dimensions
-        nc.createDimension("particle", nparticles)
+        nc.createDimension("particle", num_particles)
         nc.createDimension("particle_instance", None)
-        nc.createDimension("time", ntimes)
+        nc.createDimension("time", num_times)
         # Variables
         v = nc.createVariable("time", "f8", ("time",))
         v.units = "seconds since 1970-01-01 00:00:00"
@@ -52,7 +52,7 @@ def particle_file():
         # Data
         nc.variables["time"][:] = time
         nc.variables["particle_count"][:] = count
-        nc.variables["start_time"][:] = time[:nparticles]
+        nc.variables["start_time"][:] = time[:num_particles]
         nc.variables["location_id"][:] = [10000, 10001, 10002]
         nc.variables["pid"][:] = [v for v in pid.flat if v >= 0]
         nc.variables["X"][:] = [v for v in X.flat if not np.isnan(v)]
@@ -64,12 +64,12 @@ def particle_file():
     os.remove(pfile)
 
 
-def test_open():
+def test_open_fail():
     with pytest.raises(FileNotFoundError):
         pf = ParticleFile("no_such_file.nc")
 
 
-def test_count(particle_file):
+def test_numbers(particle_file):
     """Alignment of time frames in the particle file."""
     with ParticleFile(particle_file) as pf:
         assert pf.num_times == 4
@@ -109,6 +109,16 @@ def test_pid(particle_file):
         assert pf.pid[3] == 2
 
 
+def test_pid2(particle_file):
+    """The pid from an instance variable"""
+    with ParticleFile(particle_file) as pf:
+        X = pf.X
+        assert all(X.pid == pf.ds.pid)
+        for i in range(4):
+            assert all(X[i].pid == pf.pid[i])
+        # X.pid[3] is not the same as X[3].pid
+        assert not all(X.pid[3] == X[3].pid)
+
 def test_position(particle_file):
     with ParticleFile(particle_file) as pf:
         X, Y = pf.position(time=1)
@@ -118,6 +128,18 @@ def test_position(particle_file):
         assert all(X == pf.X[2])
         assert all(Y == pf.Y[2])
 
+
+def test_getX(particle_file):
+    with ParticleFile(particle_file) as pf:
+        X = pf.X
+        assert X == pf["X"]
+        assert X == pf.variables["X"]  # Obsolete
+        assert X.isel(time=0) == 0
+        assert X[0] == 0
+        assert X[0] == 0
+        assert all(X[1] == [1, 11])
+        assert all(X[2] == [2, 22])
+        assert X[3] == 23
 
 def test_trajectory(particle_file):
     with ParticleFile(particle_file) as pf:
@@ -129,3 +151,12 @@ def test_trajectory(particle_file):
         assert all(traj.time == pf.time[:-1])
         assert all(traj.X == pf.X.sel(pid=0))
         assert all(traj.Y == pf.Y.sel(pid=0))
+
+
+def test_particle_variable(particle_file):
+    """Two particle variables, start_time and location_id"""
+    with ParticleFile(particle_file) as pf:
+        assert pf.start_time[0] == np.datetime64("1970-01-01")
+        assert pf["start_time"][1] == np.datetime64("1970-01-01 01")
+        assert all(pf.location_id == np.array([10000, 10001, 10002]))
+        assert all(pf.location_id == pf["location_id"][:])

@@ -98,6 +98,8 @@ class ParticleFile:
                 self.particle_variables.append(var)
                 self.variables[var] = ParticleVariable(self.ds[var])
 
+        print(self.time)
+
     # For convenience
     def position(self, time: int) -> Position:
         return Position(self.X[time], self.Y[time])

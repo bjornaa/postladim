@@ -1,5 +1,19 @@
+"""Classes for LADiM variables
+
+Defines two kinds of LADiM variables
+
+- InstanceVariables:
+    Depend on the particle and time, for instance position, temperature, ...
+- ParticleVariables:
+    Do not depend on time, for instance release position, size of a 'dead' particle, ...
+
+Note that pid, the particle identifier is an InstanceVariable, projecting from a
+particle instance to the particle itself.
+
+"""
+
 import datetime
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, Union, Optional
 import numpy as np  # type: ignore
 import xarray as xr  # type: ignore
 
@@ -8,30 +22,33 @@ Array = Union[np.ndarray, xr.DataArray]
 
 
 class InstanceVariable:
+    """Time dependent LADiM variable
+
+    An InstanceVariable is a variable from LADiM depending on the particle instance
+    i.e. the particle and time. Examples are position variables, environmental
+    conditions like temperature or biological variables like size, weight, age.
+    Note that the particle identifier, pid, is an InstanceVariable.
+
+    The implementation tries to emulate a xarray DataArray.
+
+    """
+
     def __init__(
         self,
         data: xr.DataArray,
         pid: xr.DataArray,
-        ptime: xr.DataArray,
-        pcount: np.ndarray,
+        time: xr.DataArray,
+        count: np.ndarray,
     ) -> None:
         self.da = data
         self.pid = pid
-        self.time = ptime
-        self.count = pcount
+        self.time = time
+        self.count = count
         self.end = self.count.cumsum()
         self.start = self.end - self.count
         self.num_times = len(self.time)
         self.particles = np.unique(self.pid)
         self.num_particles = len(self.particles)  # Number of distinct particles
-
-    # @property
-    # def end(self) -> np.ndarray:
-    #    return self.count.cumsum()
-
-    # @property
-    # def start(self) -> np.ndarray:
-    #    return self.end - self.count
 
     @property
     def values(self) -> np.ndarray:
@@ -59,8 +76,8 @@ class InstanceVariable:
         return InstanceVariable(
             data=self.da[start:end],
             pid=self.pid[start:end],
-            ptime=self.time[tslice],
-            pcount=self.count[tslice],
+            time=self.time[tslice],
+            count=self.count[tslice],
         )
 
     def _sel_time_value(self, time_val: Timetype) -> xr.DataArray:
@@ -69,7 +86,6 @@ class InstanceVariable:
 
     def _sel_pid_value(self, pid: int) -> xr.DataArray:
         """Selection based on single pid value"""
-        # Burde få en pid-koordinat også
         data = []
         times = []
         for t_idx in range(self.num_times):
@@ -78,7 +94,6 @@ class InstanceVariable:
                 times.append(t_idx)
             except KeyError:
                 pass
-        # Bedre, på forhånd sjekk om pid > maximum
         if not data:
             raise KeyError(f"No such pid = {pid}")
         V = xr.DataArray(data, coords={"time": self.time[times]}, dims=("time",))
@@ -106,9 +121,9 @@ class InstanceVariable:
         # No arguments
         raise ValueError("Need 1 or 2 arguments")
 
-    # Do something like dask if the array gets to big
-    def full(self) -> xr.DataArray:
-        """Return a full DataArray"""
+    # TODO: Do something like dask if the array gets to big
+    def to_dense(self) -> xr.DataArray:
+        """Return a full (dense) DataArray"""
         data = np.empty((self.num_times, self.num_particles))
         data[:, :] = np.nan
         for n in range(self.num_times):
@@ -117,6 +132,10 @@ class InstanceVariable:
         coords = [("time", self.time.values), ("pid", self.particles)]
         V = xr.DataArray(data=data, coords=coords, dims=("time", "pid"))
         return V
+
+    def full(self) -> xr.DataArray:
+        """Deprecated, use to_dense instead"""
+        return self.to_dense()
 
     # More complicated typing
     # def __getitem__(self, index: Union[int, slice]) -> xr.DataArray:
@@ -133,7 +152,7 @@ class InstanceVariable:
                 try:
                     v = self._sel_time_index(time_idx).sel(pid=pid)
                 except KeyError:
-                    # Også håndtere v != floatpf.
+                    # This only works for float types
                     v = np.nan
             else:
                 raise IndexError(f"pid={pid} is out of bound={self.num_particles}")
@@ -163,8 +182,7 @@ class ParticleVariable:
         self.da = data
 
     def __getitem__(self, p: int) -> Any:
-        """Get the value of particle with pid = p
-        """
+        """Get the value of particle with pid = p"""
         return self.da[p]
 
     def __array__(self) -> np.ndarray:
