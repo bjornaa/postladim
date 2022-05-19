@@ -14,12 +14,12 @@ particle instance to the particle itself.
 
 import datetime
 from typing import Any, Union, Optional
-import numpy as np  # type: ignore
-import xarray as xr  # type: ignore
+import numpy as np
+import xarray as xr  
 
 Timetype = Union[str, np.datetime64, datetime.datetime]
 Array = Union[np.ndarray, xr.DataArray]
-
+Variable = Union["InstanceVariable", "ParticleVariable"]
 
 class InstanceVariable:
     """Time dependent LADiM variable

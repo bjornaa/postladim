@@ -1,15 +1,14 @@
 from collections import namedtuple
 import datetime
-from typing import Any, List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Literal
 import numpy as np  # type: ignore
 import xarray as xr  # type: ignore
 
-from .variable import InstanceVariable, ParticleVariable, arraystr
+from .variable import InstanceVariable, ParticleVariable, Variable, arraystr
 
 
 Timetype = Union[str, np.datetime64, datetime.datetime]
 Array = Union[np.ndarray, xr.DataArray]
-
 
 # --------------------------------------------
 
@@ -87,7 +86,7 @@ class ParticleFile:
         # Extract instance and particle variables from the netCDF file
         self.instance_variables: List["InstanceVariable"] = []
         self.particle_variables: List["ParticleVariable"] = []
-        self.variables: Dict[str, Union["InstanceVariable", "ParticleVariable"]] = {}
+        self.variables: Dict[str, Variable] = {}
         for var in list(self.ds.variables):
             if "particle_instance" in self.ds[var].dims:
                 self.instance_variables.append(var)
@@ -98,11 +97,13 @@ class ParticleFile:
                 self.particle_variables.append(var)
                 self.variables[var] = ParticleVariable(self.ds[var])
 
-        print(self.time)
-
     # For convenience
-    def position(self, time: int) -> Position:
-        return Position(self.X[time], self.Y[time])
+    def position(self, time: int, system: Optional[Literal["xy", "lonlat"]] = None) -> Position:
+        if system is None and "X" in self.instance_variables:
+            system = "xy"
+        if system == "xy":
+            return Position(self.X[time], self.Y[time])
+        return Position(self.lon[time], self.lat[time])
 
     # For backwards compability
     # Could define ParticleDataset (from file)
@@ -127,10 +128,10 @@ class ParticleFile:
     def __len__(self) -> int:
         return len(self.time)
 
-    def __getattr__(self, var: str) -> Union[InstanceVariable, ParticleVariable]:
+    def __getattr__(self, var: str) -> Variable:
         return self.variables[var]
 
-    def __getitem__(self, var: str) -> Union[InstanceVariable, ParticleVariable]:
+    def __getitem__(self, var: str) -> Variable:
         return self.variables[var]
 
     # Missing: Add global attributes
