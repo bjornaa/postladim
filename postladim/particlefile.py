@@ -1,8 +1,20 @@
+"""Main classes for postprocessing LADiM output
+
+This module contains classes:
+  - ParticleFile
+  - Trajectory
+  - Time (obsolete)
+
+"""
+
+
 from collections import namedtuple
 import datetime
+from types import TracebackType
 from typing import List, Dict, Union, Optional, Literal
-import numpy as np  # type: ignore
-import xarray as xr  # type: ignore
+
+import numpy as np
+import xarray as xr
 
 from .variable import InstanceVariable, ParticleVariable, Variable, arraystr
 
@@ -23,7 +35,7 @@ class Trajectory:
         self._data = X, Y
 
     # For unpacking: X, Y = pf.trajectory(pid=4)
-    def __getitem__(self, n):
+    def __getitem__(self, n: int):
         return self._data[n]
 
     @property
@@ -45,33 +57,62 @@ class Trajectory:
 # ---------------------------------------------
 
 
-class Time:
-    """Callable version of time DataArray
+# class Time:
+#     """Callable version of time DataArray
 
-    For backwards compability, obsolete
-    """
+#     For backwards compability, obsolete
+#     """
 
-    def __init__(self, ptime):
-        self.da = ptime
+#     def __init__(self, ptime):
+#         self.da = ptime
 
-    def __call__(self, n: int) -> np.datetime64:
-        """Prettier version of self[n]"""
-        return self.da[n].values.astype("M8[s]")
+#     def __call__(self, n: int) -> np.datetime64:
+#         """Prettier version of self[n]"""
+#         return self.da[n].values.astype("M8[s]")
 
-    def __getitem__(self, arg):
-        return self.da[arg]
+#     def __getitem__(self, arg):
+#         return self.da[arg]
 
-    def __repr__(self) -> str:
-        return arraystr(self.da)
+#     def __repr__(self) -> str:
+#         return arraystr(self.da)
 
-    def __len__(self) -> int:
-        return len(self.da)
+#     def __len__(self) -> int:
+#         return len(self.da)
 
 
 # --------------------------------------
 
 
 class ParticleFile:
+    """Interface to sparse particle files from LADiM
+
+    Parameters:
+        filename
+
+    Attributes:
+    ds : xarray Dataset
+        Underlying xarray Dataset
+    num_times : integer
+        Number of time steps
+    num_particles: integer
+        Total number of particles involved
+    count : 1D integer array, length = num_times
+        Number of particles per time step
+    start: 1D integer array, length = num_times
+        Start index for particles per time step
+    end: 1D integer array, length = num_times
+        End index for particles per tile step
+    time: 1D xarray DataArray, length = num_times
+        Date and time of time step
+    instance_variables:
+        List of instance variables
+    particle_variables:
+        List of particle variables
+    variables:
+        Combined list of variables
+
+    """
+
     def __init__(self, filename: str) -> None:
         ds = xr.open_dataset(filename)
         self.ds = ds
@@ -80,7 +121,7 @@ class ParticleFile:
         self.end = self.count.cumsum()
         self.start = self.end - self.count
         self.num_times = len(self.count)
-        self.time = Time(ds.time)
+        self.time = ds.time
         self.num_particles = int(ds.pid.max()) + 1  # Number of particles
 
         # Extract instance and particle variables from the netCDF file
@@ -98,16 +139,15 @@ class ParticleFile:
                 self.variables[var] = ParticleVariable(self.ds[var])
 
     # For convenience
-    def position(self, time: int, system: Optional[Literal["xy", "lonlat"]] = None) -> Position:
+    def position(
+        self, time: int, system: Optional[Literal["xy", "lonlat"]] = None
+    ) -> Position:
         if system is None and "X" in self.instance_variables:
             system = "xy"
         if system == "xy":
             return Position(self.X[time], self.Y[time])
         return Position(self.lon[time], self.lat[time])
 
-    # For backwards compability
-    # Could define ParticleDataset (from file)
-    # This could slice and take trajectories og that
     # Could improve speed by computing X and Y at same time
     def trajectory(self, pid: int) -> Trajectory:
         # mypy barks on these two
@@ -158,10 +198,10 @@ class ParticleFile:
     def __enter__(self):
         return self
 
-    def __exit__(self, atype, value, traceback):
+    def __exit__(
+        self,
+        exc_type: Union[type, None],
+        exc_val: Union[BaseException, None],
+        exc_tb: Union[TracebackType, None],
+    ) -> None:
         self.close()
-
-
-# ----------------------
-# Utility functions
-# ---------------------

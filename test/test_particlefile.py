@@ -1,20 +1,14 @@
 import os
 import pytest
 
-import datetime
-
 import numpy as np
-
-# import xarray as xr
-# from pathlib import Path
 from netCDF4 import Dataset
 from postladim import ParticleFile
 
 
 @pytest.fixture(scope="module")
 def particle_file():
-    # set up
-    # Return a small particle file
+    """Create a small particle file"""
     #
     #  0   -   -
     #  1  11   -
@@ -22,16 +16,15 @@ def particle_file():
     #  -   -  23
     #
     pfile = "test.nc"
-    num_particles = 3
     X = np.array(
         [[0, np.nan, np.nan], [1, 11, np.nan], [2, np.nan, 22], [np.nan, np.nan, 23]]
     )
     Y = np.array(
         [[2, np.nan, np.nan], [3, 8, np.nan], [4, np.nan, 9], [np.nan, np.nan, 10]]
     )
-    num_times = X.shape[0]
-    pid = np.multiply.outer(num_times * [1], list(range(num_particles)))
-    pid[np.isnan(X)] = -99  # Undefined integer
+    num_times, num_particles = X.shape
+    pid = np.multiply.outer(num_times * [1], np.arange(num_particles))
+    pid[np.isnan(X)] = -999  # Use a negative integer for undefined
     time = 3600 * np.arange(num_times)  # hourly timesteps
     count = (np.ones(np.shape(X)) - np.isnan(X)).sum(axis=1)
     with Dataset(pfile, mode="w") as nc:
@@ -41,10 +34,10 @@ def particle_file():
         nc.createDimension("time", num_times)
         # Variables
         v = nc.createVariable("time", "f8", ("time",))
-        v.units = "seconds since 1970-01-01 00:00:00"
+        v.units = "seconds since 2022-01-01 00:00:00"
         v = nc.createVariable("particle_count", "i", ("time",))
         v = nc.createVariable("start_time", "f8", ("particle",))
-        v.units = "seconds since 1970-01-01 00:00:00"
+        v.units = "seconds since 2022-01-01 00:00:00"
         v = nc.createVariable("location_id", "i", ("particle",))
         v = nc.createVariable("pid", "i", ("particle_instance",))
         v = nc.createVariable("X", "f4", ("particle_instance",))
@@ -66,7 +59,7 @@ def particle_file():
 
 def test_open_fail():
     with pytest.raises(FileNotFoundError):
-        pf = ParticleFile("no_such_file.nc")
+        ParticleFile("no_such_file.nc")
 
 
 def test_numbers(particle_file):
@@ -83,16 +76,12 @@ def test_numbers(particle_file):
 def test_time(particle_file):
     """Time handled correctly"""
     with ParticleFile(particle_file) as pf:
-        assert pf.time[3] == np.datetime64("1970-01-01 03")
-        times2 = [np.datetime64(t) for t in ["1970-01-01", "1970-01-01 01"]]
-        assert all(pf.time[:2] == times2)
-        # Old callable notation still works
-        assert pf.time(3) == pf.time[3]
-        assert str(pf.time(3)) == "1970-01-01T03:00:00"
+        assert pf.time[2] == np.datetime64("2022-01-01 02")
+        assert pf.time[3] == np.datetime64("2022-01-01 03")
 
 
-def test_variables(particle_file):
-    """Indentifies the variables to correct category"""
+def test_variable_type(particle_file):
+    """Check that the variables belong to correct type"""
     with ParticleFile(particle_file) as pf:
         assert pf.instance_variables == ["pid", "X", "Y"]
         assert pf.particle_variables == ["start_time", "location_id"]
@@ -119,6 +108,7 @@ def test_pid2(particle_file):
         # X.pid[3] is not the same as X[3].pid
         assert not all(X.pid[3] == X[3].pid)
 
+
 def test_position(particle_file):
     with ParticleFile(particle_file) as pf:
         X, Y = pf.position(time=1)
@@ -141,6 +131,7 @@ def test_getX(particle_file):
         assert all(X[2] == [2, 22])
         assert X[3] == 23
 
+
 def test_trajectory(particle_file):
     with ParticleFile(particle_file) as pf:
         X, Y = pf.trajectory(2)
@@ -156,7 +147,7 @@ def test_trajectory(particle_file):
 def test_particle_variable(particle_file):
     """Two particle variables, start_time and location_id"""
     with ParticleFile(particle_file) as pf:
-        assert pf.start_time[0] == np.datetime64("1970-01-01")
-        assert pf["start_time"][1] == np.datetime64("1970-01-01 01")
+        assert pf.start_time[0] == np.datetime64("2022-01-01")
+        assert pf["start_time"][1] == np.datetime64("2022-01-01 01")
         assert all(pf.location_id == np.array([10000, 10001, 10002]))
         assert all(pf.location_id == pf["location_id"][:])

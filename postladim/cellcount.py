@@ -33,11 +33,6 @@ def cellcount(
 
     # Subgrid specification
 
-    i0: int
-    i1: int
-    j0: int
-    j1: int
-
     if grid_limits is None:
         i0 = int(round(np.min(X)))
         i1 = int(round(np.max(X))) + 1
