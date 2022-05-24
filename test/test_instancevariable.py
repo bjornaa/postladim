@@ -1,22 +1,23 @@
-# import os
-# import datetime
-
 import numpy as np
 import xarray as xr
 import pytest
 
 from postladim.variable import InstanceVariable
 
-# Should not have to repeat this from test_particlefile.py
+
 @pytest.fixture(scope="module")
 def X():
-    # set up a small InstanceVariable, 4 times, 3 particles, 6 particle instances
-    #
-    #  0   -   -
-    #  1  11   -
-    #  2   -  22
-    #  -   -  23
-    #
+    """Create a small InstanceVariable,
+
+    4 times, 3 particles, 6 particle instances
+
+      0   -   -
+      1  11   -
+      2   -  22
+      -   -  23
+
+    """
+
     data = np.array([0, 1, 11, 2, 22, 23])
     count = np.array([1, 2, 2, 1])
     pid = np.array([0, 0, 1, 0, 2, 2])
@@ -29,9 +30,6 @@ def X():
     pid = xr.DataArray(pid, dims=("particle_instance"))
     time = xr.DataArray(time, coords=[("time", time)])
     return InstanceVariable(data=data, pid=pid, time=time, count=count)
-
-
-# --- InstanceVariable tests ---
 
 
 def test_creation(X):
@@ -126,4 +124,4 @@ def test_to_dense(X):
     # all = fails because of NaNs, use np.testing instead
     np.testing.assert_array_equal(A, expected)
     assert type(A) == xr.DataArray
-    assert set(A.dims) == {'time', 'pid'}
+    assert set(A.dims) == {"time", "pid"}

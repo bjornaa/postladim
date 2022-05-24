@@ -117,7 +117,10 @@ class ParticleFile:
         ds = xr.open_dataset(filename)
         self.ds = ds
         # End and start of segment with particles at a given time
-        self.count = ds.particle_count.values
+        try:
+            self.count = ds.particle_count.values
+        except AttributeError:
+            raise SystemExit(f"File {filename} is not a valid particlefile")
         self.end = self.count.cumsum()
         self.start = self.end - self.count
         self.num_times = len(self.count)

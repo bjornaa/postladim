@@ -17,9 +17,8 @@ def cellcount(
         Particle position in grid coordinates
     W : 1D array, length = n
         Weight of particles, default=None for unweighted
-    grid_limits : 4-tuple (i0, i1, j0, j1) or 2-tuple (i1, j1)
+    grid_limits : 4-tuple (i0, i1, j0, j1) or None
         Limitation of grid to consider,
-        If 2-tuple, i0 and j0 default to zero.
         Default=None gives the bounding box of the particle positions
 
     Returns
@@ -28,6 +27,7 @@ def cellcount(
         Particle counts
 
     Note: particles outside the grid limits are silently ignored
+    Integer indices are at the center of the grid cells
 
     """
 
@@ -38,9 +38,6 @@ def cellcount(
         i1 = int(round(np.max(X))) + 1
         j0 = int(round(np.min(Y)))
         j1 = int(round(np.max(Y))) + 1
-    elif len(grid_limits) == 2:
-        i1, j1 = grid_limits
-        i0, j0 = 0, 0
     elif len(grid_limits) == 4:
         i0, i1, j0, j1 = grid_limits
     else:

@@ -1,3 +1,4 @@
+#from inspect import Attribute
 import os
 import pytest
 
@@ -15,7 +16,7 @@ def particle_file():
     #  2   -  22
     #  -   -  23
     #
-    pfile = "test.nc"
+    pfile = "test_tmp.nc"
     X = np.array(
         [[0, np.nan, np.nan], [1, 11, np.nan], [2, np.nan, 22], [np.nan, np.nan, 23]]
     )
@@ -57,9 +58,32 @@ def particle_file():
     os.remove(pfile)
 
 
-def test_open_fail():
+@pytest.fixture()
+def non_particle():
+    """Make an empty netcdf file"""
+    pfile = "test_non_particle_tmp.nc"
+
+    with Dataset(pfile, mode="w") as nc:
+        nc.createDimension('lon', 4)
+        v = nc.createVariable('lon', 'f4', ('lon',))
+        v[:] = [1, 2, 3, 4]
+
+    yield pfile
+
+    os.remove(pfile)
+
+
+def test_open_fail(non_particle):
+    # non-existing file
     with pytest.raises(FileNotFoundError):
         ParticleFile("no_such_file.nc")
+    # file is not a netcdf file
+    with pytest.raises(ValueError):
+        ParticleFile("test_particlefile.py")
+    # Netcdf file that is not a particlefile
+    with pytest.raises(SystemExit):
+        ParticleFile(non_particle)
+        # ParticleFile("/home/bjorn/ladim2/examples/data/ocean_avg_0014.nc")
 
 
 def test_numbers(particle_file):
@@ -121,11 +145,10 @@ def test_position(particle_file):
 
 def test_getX(particle_file):
     with ParticleFile(particle_file) as pf:
-        X = pf.X
-        assert X == pf["X"]
-        assert X == pf.variables["X"]  # Obsolete
+        X = pf["X"]
+        assert pf.X == X
+        assert pf.variables["X"] == X # Obsolete netcdf-inspired notation
         assert X.isel(time=0) == 0
-        assert X[0] == 0
         assert X[0] == 0
         assert all(X[1] == [1, 11])
         assert all(X[2] == [2, 22])

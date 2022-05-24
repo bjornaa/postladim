@@ -1,16 +1,18 @@
-import pytest
-
-# import numpy as np
-# Use cellcount from cellcount2 (xarray version)
 from postladim import cellcount
 
+# Miss some failing tests
+#   len(X) != len(Y)
+#   len(W) is wrong
+#   i0 > i1 or j0 > j1
 
 def test_default():
+    # miss: test limits OK
+    # Split in more tests
     X = [11.2, 11.8, 12.2, 12.3]
     Y = [0.8, 1.2, 1.4, 3.1]
     C = cellcount(X, Y)
     assert C.shape == (3, 2)
-    assert C.sum() == len(X)  # 4
+    assert C.sum() == len(X)
     assert (C == [[1, 2], [0, 0], [0, 1]]).all()
     assert C.sel(X=11, Y=1) == 1
     assert C.sel(X=12, Y=1) == 2
@@ -28,12 +30,6 @@ def test_grid_limits():
     assert (C == [[0, 0, 0, 0], [0, 1, 2, 0]]).all()
     assert C.sel(X=11, Y=1) == 1
     assert C.sel(X=12, Y=1) == 2
-    assert C.sel(X=11, Y=0) == 0
-
-    C = cellcount(X, Y, grid_limits=(12, 3))
-    assert C.shape == (3, 12)
-    assert C.sum() == 1  # Three points outside
-    assert C.sel(X=11, Y=1) == 1
     assert C.sel(X=11, Y=0) == 0
 
 
