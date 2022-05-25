@@ -84,6 +84,19 @@ class InstanceVariable:
         idx = self.time.get_index("time").get_loc(time_val)
         return self._sel_time_index(idx)
 
+    def _sel_pid_value2(self, pid: int) -> xr.DataArray:
+        """Selection based on single pid value"""
+        # Make it 100 times faster using the pf.pid.da.values
+        # self.da.values[pf.pid.da.values==pid]
+        # Problem: get the times. This is missing a time step
+        data = self.da.values[self.pid.da.values==pid]
+        I, = np.nonzero(pf.X.pid.values==10000);
+        t0, t1 = np.searchsorted(self.start, [I[0], I[-1]], side='right')
+        # times = self.time[t0:t1], try t0-1:t0+1
+        V = xr.DataArray(data, coords={"time": self.time[t0:t1]}, dims=("time",))
+        V["pid"] = pid
+        return V
+
     def _sel_pid_value(self, pid: int) -> xr.DataArray:
         """Selection based on single pid value"""
         data = []
