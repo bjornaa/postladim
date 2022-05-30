@@ -15,11 +15,12 @@ particle instance to the particle itself.
 import datetime
 from typing import Any, Union, Optional
 import numpy as np
-import xarray as xr  
+import xarray as xr
 
 Timetype = Union[str, np.datetime64, datetime.datetime]
 Array = Union[np.ndarray, xr.DataArray]
 Variable = Union["InstanceVariable", "ParticleVariable"]
+
 
 class InstanceVariable:
     """Time dependent LADiM variable
@@ -57,6 +58,8 @@ class InstanceVariable:
 
     def _sel_time_index(self, n: int) -> xr.DataArray:
         """Select by time index, return xarray."""
+        if not 0 <= n < self.num_times:
+            raise KeyError(f"No timestep = {n}")
         start = self.start[n]
         end = self.end[n]
         V = self.da[start:end]
@@ -81,43 +84,41 @@ class InstanceVariable:
         )
 
     def _sel_time_value(self, time_val: Timetype) -> xr.DataArray:
-        idx = self.time.get_index("time").get_loc(time_val)
+        try:
+            idx = self.time.get_index("time").get_loc(time_val)
+        except KeyError:
+            raise KeyError(f"No data for time = {time_val}")
         return self._sel_time_index(idx)
 
-    def _sel_pid_value2(self, pid: int) -> xr.DataArray:
+    def _sel_pid_value(self, pid: int) -> xr.DataArray:
         """Selection based on single pid value"""
-        # Make it 100 times faster using the pf.pid.da.values
-        # self.da.values[pf.pid.da.values==pid]
-        # Problem: get the times. This is missing a time step
-        data = self.da.values[self.pid.da.values==pid]
-        I, = np.nonzero(pf.X.pid.values==10000);
-        t0, t1 = np.searchsorted(self.start, [I[0], I[-1]], side='right')
-        # times = self.time[t0:t1], try t0-1:t0+1
+        (I,) = np.nonzero(self.pid.values == pid)
+        if len(I) == 0:
+            raise KeyError(f"No data for pid = {pid}")
+        data = self.da.values[I]
+        t0, t1 = np.searchsorted(self.start, [I[0], I[-1]], side="right")
+        t0 -= 1
         V = xr.DataArray(data, coords={"time": self.time[t0:t1]}, dims=("time",))
         V["pid"] = pid
         return V
 
-    def _sel_pid_value(self, pid: int) -> xr.DataArray:
-        """Selection based on single pid value"""
-        data = []
-        times = []
-        for t_idx in range(self.num_times):
-            try:
-                data.append(self._sel_time_index(t_idx).sel(pid=pid))
-                times.append(t_idx)
-            except KeyError:
-                pass
-        if not data:
-            raise KeyError(f"No such pid = {pid}")
-        V = xr.DataArray(data, coords={"time": self.time[times]}, dims=("time",))
-        V["pid"] = pid
-        return V
+    # Old, slow code
+    # def _sel_pid_value(self, pid: int) -> xr.DataArray:
+    #     """Selection based on single pid value"""
+    #     data = []
+    #     times = []
+    #     for t_idx in range(self.num_times):
+    #         try:
+    #             data.append(self._sel_time_index(t_idx).sel(pid=pid))
+    #             times.append(t_idx)
+    #         except KeyError:
+    #             pass
+    #     if not data:
+    #         raise KeyError(f"No such pid = {pid}")
+    #     V = xr.DataArray(data, coords={"time": self.time[times]}, dims=("time",))
+    #     V["pid"] = pid
+    #     return V
 
-    # def isel(self, *, time: Optional[int] = None) -> xr.DataArray:
-    #     if time is not None:
-    #         return self._sel_time_index(time)
-    #     else:
-    #         raise ValueError("Need one argument")
     def isel(self, *, time: int) -> xr.DataArray:
         return self._sel_time_index(time)
 

@@ -89,6 +89,12 @@ def test_time_select(X):
     assert all(X.sel(time=np.datetime64("2022-05-16 02")) == X[2])
     assert all(X.sel(time="2022-05-16 02") == X[2])
 
+def test_select_by_nonexisting_time(X):
+    with pytest.raises(KeyError):
+        X.isel(time=4)
+    with pytest.raises(KeyError):
+        X.sel(time="2020-02-02 02")
+    
 
 def test_time_slice(X):
     V = X[1:3]
@@ -112,6 +118,9 @@ def test_select_by_pid(X):
     all(X.sel(pid=2) == [22, 23])
     all(X.sel(pid=2).time == ["2022-05-16T02:00:00 2022-05-16T03:00:00"])
 
+def test_select_by_nonexisting_pid(X):
+    with pytest.raises(KeyError):
+        X.sel(pid=3)
 
 def test_to_dense(X):
     A = X.to_dense()
