@@ -24,10 +24,11 @@ def particle_file():
         [[2, np.nan, np.nan], [3, 8, np.nan], [4, np.nan, 9], [np.nan, np.nan, 10]]
     )
     num_times, num_particles = X.shape
-    pid = np.multiply.outer(num_times * [1], np.arange(num_particles))
+    pid = np.multiply.outer(np.ones(num_times, dtype=int), np.arange(num_particles))
     pid[np.isnan(X)] = -999  # Use a negative integer for undefined
     time = 3600 * np.arange(num_times)  # hourly timesteps
-    count = (np.ones(np.shape(X)) - np.isnan(X)).sum(axis=1)
+    count = num_particles - np.isnan(X).sum(axis=1)
+    print(count)
     with Dataset(pfile, mode="w") as nc:
         # Dimensions
         nc.createDimension("particle", num_particles)
@@ -83,18 +84,17 @@ def test_open_fail(non_particle):
     # Netcdf file that is not a particlefile
     with pytest.raises(SystemExit):
         ParticleFile(non_particle)
-        # ParticleFile("/home/bjorn/ladim2/examples/data/ocean_avg_0014.nc")
 
 
 def test_numbers(particle_file):
     """Alignment of time frames in the particle file."""
     with ParticleFile(particle_file) as pf:
-        assert pf.num_times == 4
-        assert all(pf.start == [0, 1, 3, 5])
-        assert list(pf.count) == [1, 2, 2, 1]
-        assert list(pf.end) == [1, 3, 5, 6]
         assert len(pf) == 4
+        assert pf.num_times == 4
         assert pf.num_particles == 3
+        assert all(pf.count == [1, 2, 2, 1])
+        assert all(pf.start == [0, 1, 3, 5])
+        assert all(pf.end == [1, 3, 5, 6])
 
 
 def test_time(particle_file):
@@ -118,19 +118,8 @@ def test_pid(particle_file):
         assert pf["pid"][0] == 0
         assert pf.pid[0] == 0
         assert all(pf.pid[1] == [0, 1])
-        assert list(pf.pid[2]) == [0, 2]
+        assert all(pf.pid[2] == [0, 2])
         assert pf.pid[3] == 2
-
-
-def test_pid2(particle_file):
-    """The pid from an instance variable"""
-    with ParticleFile(particle_file) as pf:
-        X = pf.X
-        assert all(X.pid == pf.ds.pid)
-        for i in range(4):
-            assert all(X[i].pid == pf.pid[i])
-        # X.pid[3] is not the same as X[3].pid
-        assert not all(X.pid[3] == X[3].pid)
 
 
 def test_position(particle_file):
@@ -148,14 +137,10 @@ def test_getX(particle_file):
         X = pf["X"]
         assert pf.X == X
         assert pf.variables["X"] == X # Obsolete netcdf-inspired notation
-        assert X.isel(time=0) == 0
-        assert X[0] == 0
-        assert all(X[1] == [1, 11])
-        assert all(X[2] == [2, 22])
-        assert X[3] == 23
 
 
 def test_trajectory(particle_file):
+    """Test the trajectory method"""
     with ParticleFile(particle_file) as pf:
         X, Y = pf.trajectory(2)
         assert all(X == [22, 23])
@@ -163,8 +148,8 @@ def test_trajectory(particle_file):
         traj = pf.trajectory(0)
         assert len(traj) == 3
         assert all(traj.time == pf.time[:-1])
-        assert all(traj.X == pf.X.sel(pid=0))
-        assert all(traj.Y == pf.Y.sel(pid=0))
+        assert all(traj.X == [0, 1, 2]) 
+        assert all(traj.Y == [2, 3, 4])
 
 
 def test_particle_variable(particle_file):

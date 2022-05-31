@@ -1,3 +1,8 @@
+"""Test suite for the InstanceVariable class in postladim"""
+
+# Bjørn Ådlandsvik <bjorn@hi.no>
+# Institute of Marine Research
+
 import numpy as np
 import xarray as xr
 import pytest
@@ -17,7 +22,6 @@ def X():
       -   -  23
 
     """
-
     data = np.array([0, 1, 11, 2, 22, 23])
     count = np.array([1, 2, 2, 1])
     pid = np.array([0, 0, 1, 0, 2, 2])
@@ -30,57 +34,58 @@ def X():
     pid = xr.DataArray(pid, dims=("particle_instance"))
     time = xr.DataArray(time, coords=[("time", time)])
     return InstanceVariable(data=data, pid=pid, time=time, count=count)
-
-
+     
 def test_creation(X):
+    """Check that the instance variable is created"""
     assert type(X) == InstanceVariable
 
 
 def test_data(X):
+    """Check that the data are represented correctly"""
     assert X[0] == 0
     assert all(X[1] == [1, 11])
     assert all(X[2] == [2, 22])
     assert X[3] == 23
+    assert all(X.values == [0, 1, 11, 2, 22, 23])
 
 
 def test_pid(X):
+    """Check the particle identifier"""
     assert X[0].pid == 0
     assert all(X[1].pid == [0, 1])
     assert all(X[2].pid == [0, 2])
     assert X[3].pid == 2
-    # Note: X.pid[n] != X[n].pid
+    assert X.pid[3] == 0  # Note: pid and item does not commute
     assert all(X.pid == [0, 0, 1, 0, 2, 2])
+
+def test_unique_pids(X):
+    """Check that the particled are identified correctly"""
+    assert all(X.particles == [0, 1, 2])
+    assert all(np.unique(X.pid) == [0, 1, 2])
 
 
 def test_time(X):
+    """Check time representation"""
     assert X[0].time == np.datetime64("2022-05-16")
     assert X[1].time == np.datetime64("2022-05-16 01")
     assert X[2].time == np.datetime64("2022-05-16 02")
     assert X[3].time == np.datetime64("2022-05-16 03")
-    # Time and item commutes
-    assert X.time[2] == X[2].time
+    assert X.time[2] == X[2].time  # Time and item commutes
 
 
 def test_count(X):
+    """Check particle count and related attributes"""
     assert all(X.count == [1, 2, 2, 1])
-
-
-def test_values(X):
-    assert all(X.values == [0, 1, 11, 2, 22, 23])
-
-
-def test_start(X):
     assert all(X.start == [0, 1, 3, 5])
-
-
-def test_end(X):
     assert all(X.end == [1, 3, 5, 6])
 
 
 def test_num(X):
+    """Check shape"""
     assert X.num_particles == 3
     assert X.num_times == 4
     assert len(X) == 4  # len == num_times
+    assert len(X.da) == 6  # Number of particle instances
 
 
 def test_time_select(X):
@@ -89,12 +94,13 @@ def test_time_select(X):
     assert all(X.sel(time=np.datetime64("2022-05-16 02")) == X[2])
     assert all(X.sel(time="2022-05-16 02") == X[2])
 
+
 def test_select_by_nonexisting_time(X):
     with pytest.raises(KeyError):
         X.isel(time=4)
     with pytest.raises(KeyError):
         X.sel(time="2020-02-02 02")
-    
+
 
 def test_time_slice(X):
     V = X[1:3]
@@ -118,9 +124,11 @@ def test_select_by_pid(X):
     all(X.sel(pid=2) == [22, 23])
     all(X.sel(pid=2).time == ["2022-05-16T02:00:00 2022-05-16T03:00:00"])
 
+
 def test_select_by_nonexisting_pid(X):
     with pytest.raises(KeyError):
         X.sel(pid=3)
+
 
 def test_to_dense(X):
     A = X.to_dense()
