@@ -53,13 +53,11 @@ class InstanceVariable:
 
     @property
     def values(self) -> np.ndarray:
-        # Same as self.da.values
+        """Return the data as a numpy array"""
         return np.array(self.da)
 
     def _sel_time_index(self, n: int) -> xr.DataArray:
         """Select by time index, return xarray."""
-        if not 0 <= n < self.num_times:
-            raise KeyError(f"No timestep = {n}")
         start = self.start[n]
         end = self.end[n]
         V = self.da[start:end]
@@ -86,8 +84,8 @@ class InstanceVariable:
     def _sel_time_value(self, time_val: Timetype) -> xr.DataArray:
         try:
             idx = self.time.get_index("time").get_loc(time_val)
-        except KeyError:
-            raise KeyError(f"No data for time = {time_val}")
+        except KeyError as e:
+            raise KeyError(f"No data for time = {time_val}") from e
         return self._sel_time_index(idx)
 
     def _sel_pid_value(self, pid: int) -> xr.DataArray:
@@ -102,24 +100,8 @@ class InstanceVariable:
         V["pid"] = pid
         return V
 
-    # Old, slow code
-    # def _sel_pid_value(self, pid: int) -> xr.DataArray:
-    #     """Selection based on single pid value"""
-    #     data = []
-    #     times = []
-    #     for t_idx in range(self.num_times):
-    #         try:
-    #             data.append(self._sel_time_index(t_idx).sel(pid=pid))
-    #             times.append(t_idx)
-    #         except KeyError:
-    #             pass
-    #     if not data:
-    #         raise KeyError(f"No such pid = {pid}")
-    #     V = xr.DataArray(data, coords={"time": self.time[times]}, dims=("time",))
-    #     V["pid"] = pid
-    #     return V
-
     def isel(self, *, time: int) -> xr.DataArray:
+        """Selection by time step number (time index)"""
         return self._sel_time_index(time)
 
     def sel(
@@ -151,26 +133,24 @@ class InstanceVariable:
         """Deprecated, use to_dense instead"""
         return self.to_dense()
 
-    # More complicated typing
-    # def __getitem__(self, index: Union[int, slice]) -> xr.DataArray:
     def __getitem__(
-        self, index: Union[int, slice]
+        self, index: Union[int, slice, tuple[int, int]]
     ) -> Union[xr.DataArray, "InstanceVariable"]:
         if isinstance(index, int):  # index = time_idx
             return self._sel_time_index(index)
         if isinstance(index, slice):
             return self._sel_time_slice_index(index)
-        else:  # index = time_idx, pid
-            time_idx, pid = index
-            if 0 <= pid < self.num_particles:
-                try:
-                    v = self._sel_time_index(time_idx).sel(pid=pid)
-                except KeyError:
-                    # This only works for float types
-                    v = np.nan
-            else:
-                raise IndexError(f"pid={pid} is out of bound={self.num_particles}")
-            return v
+        # otherwise, two indices
+        time_idx, pid = index
+        if 0 <= pid < self.num_particles:
+            try:
+                v = self._sel_time_index(time_idx).sel(pid=pid)
+            except KeyError:
+                # This only works for float types
+                v = np.nan
+        else:
+            raise IndexError(f"pid={pid} is out of bound={self.num_particles}")
+        return v
 
     def __array__(self) -> np.ndarray:
         return np.array(self.da)

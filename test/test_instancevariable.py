@@ -34,7 +34,7 @@ def X():
     pid = xr.DataArray(pid, dims=("particle_instance"))
     time = xr.DataArray(time, coords=[("time", time)])
     return InstanceVariable(data=data, pid=pid, time=time, count=count)
-     
+
 def test_creation(X):
     """Check that the instance variable is created"""
     assert type(X) == InstanceVariable
@@ -96,18 +96,38 @@ def test_time_select(X):
 
 
 def test_select_by_nonexisting_time(X):
-    with pytest.raises(KeyError):
+    with pytest.raises(IndexError):
         X.isel(time=4)
     with pytest.raises(KeyError):
         X.sel(time="2020-02-02 02")
 
+def test_item(X):
+    """Test the item notation with single index"""
+    assert X[0] == 0
+    assert all(X[1] == [1, 11])
+    assert all(X[2] == [2, 22])
+    assert X[3] == 23
+
 
 def test_time_slice(X):
+    """Test item notation with slice"""
     V = X[1:3]
     assert type(V) == InstanceVariable
     assert len(V) == 2
     assert all(V[0] == X[1])
     assert all(V[1] == X[2])
+
+def test_item2(X):
+    """Test item notation with two variables"""
+    assert X[1, 1] == 11
+    assert X[2, 0] == 2
+    assert np.isnan(X[2, 1])
+    assert X[2, 2] == 22  # X[2][2] gives IndexError
+
+
+def test_item_fail(X):
+    with pytest.raises(IndexError):
+        X[4]
 
 
 def test_time_slice_fail(X):

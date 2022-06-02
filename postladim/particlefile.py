@@ -40,14 +40,17 @@ class Trajectory:
 
     @property
     def X(self) -> xr.DataArray:
+        """The X coordinates of the trajectory"""
         return self._data[0]
 
     @property
     def Y(self) -> xr.DataArray:
+        """The Y coordinates of the trajectory"""
         return self._data[1]
 
     @property
     def time(self) -> np.datetime64:
+        """The valid time of the trajectory"""
         return self.X.time
 
     def __len__(self) -> int:
@@ -119,8 +122,8 @@ class ParticleFile:
         # End and start of segment with particles at a given time
         try:
             self.count = ds.particle_count.values
-        except AttributeError:
-            raise SystemExit(f"File {filename} is not a valid particlefile")
+        except AttributeError as e:
+            raise SystemExit(f"File {filename} is not a valid particlefile") from e
         self.end = self.count.cumsum()
         self.start = self.end - self.count
         self.num_times = len(self.count)
@@ -145,6 +148,7 @@ class ParticleFile:
     def position(
         self, time: int, system: Optional[Literal["xy", "lonlat"]] = None
     ) -> Position:
+        """Extract the positions of all particles at given time step"""
         if system is None and "X" in self.instance_variables:
             system = "xy"
         if system == "xy":
@@ -153,9 +157,7 @@ class ParticleFile:
 
     # Could improve speed by computing X and Y at same time
     def trajectory(self, pid: int) -> Trajectory:
-        # mypy barks on these two
-        # X = self["X"].sel(pid=pid)
-        # Y = self["Y"].sel(pid=pid)
+        """Extract a trajectory from pid"""
         X = InstanceVariable(self.ds["X"], self.ds.pid, self.ds.time, self.count).sel(
             pid=pid
         )
@@ -166,6 +168,7 @@ class ParticleFile:
 
     # Obsolete
     def particle_count(self, time: int) -> int:
+        """Obsolete, use ParticleFile.count[time] instead"""
         return self.count[time]
 
     def __len__(self) -> int:
@@ -181,7 +184,7 @@ class ParticleFile:
     def __repr__(self):
         s = "<postladim.ParticleFile>\n"
         s += f"num_times: {self.num_times}, num_particles: {self.num_particles}\n"
-        s += f"time: {arraystr(self.time.da)}\n"
+        s += f"time: {arraystr(self.time)}\n"
         s += f"count: {arraystr(self.count)}\n"
         s += "Instance variables:\n"
         for var in self.instance_variables:
@@ -195,6 +198,7 @@ class ParticleFile:
         return s
 
     def close(self) -> None:
+        """Close the particle file"""
         self.ds.close()
 
     # Make ParticleFile a context manager

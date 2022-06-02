@@ -1,4 +1,3 @@
-#from inspect import Attribute
 import os
 import pytest
 
@@ -28,7 +27,6 @@ def particle_file():
     pid[np.isnan(X)] = -999  # Use a negative integer for undefined
     time = 3600 * np.arange(num_times)  # hourly timesteps
     count = num_particles - np.isnan(X).sum(axis=1)
-    print(count)
     with Dataset(pfile, mode="w") as nc:
         # Dimensions
         nc.createDimension("particle", num_particles)
@@ -65,8 +63,8 @@ def non_particle():
     pfile = "test_non_particle_tmp.nc"
 
     with Dataset(pfile, mode="w") as nc:
-        nc.createDimension('lon', 4)
-        v = nc.createVariable('lon', 'f4', ('lon',))
+        nc.createDimension("lon", 4)
+        v = nc.createVariable("lon", "f4", ("lon",))
         v[:] = [1, 2, 3, 4]
 
     yield pfile
@@ -84,6 +82,12 @@ def test_open_fail(non_particle):
     # Netcdf file that is not a particlefile
     with pytest.raises(SystemExit):
         ParticleFile(non_particle)
+
+
+def test_repr(particle_file):
+    """Test that the file opens and that the repr string is created"""
+    with ParticleFile(particle_file) as pf:
+        pf.__repr__
 
 
 def test_numbers(particle_file):
@@ -136,7 +140,7 @@ def test_getX(particle_file):
     with ParticleFile(particle_file) as pf:
         X = pf["X"]
         assert pf.X == X
-        assert pf.variables["X"] == X # Obsolete netcdf-inspired notation
+        assert pf.variables["X"] == X  # Obsolete netcdf-inspired notation
 
 
 def test_trajectory(particle_file):
@@ -148,7 +152,7 @@ def test_trajectory(particle_file):
         traj = pf.trajectory(0)
         assert len(traj) == 3
         assert all(traj.time == pf.time[:-1])
-        assert all(traj.X == [0, 1, 2]) 
+        assert all(traj.X == [0, 1, 2])
         assert all(traj.Y == [2, 3, 4])
 
 

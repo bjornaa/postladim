@@ -1,15 +1,26 @@
-import numpy as np  # type:ignore
-import xarray as xr  # type: ignore
+"""Go from a particle distribution to a concentration field
+
+Presently by counting (possibly weighted) particles in grid cells
+"""
+
+# ------------------------------
+# Bjørn Ådlandsvik <bjorn@hi.no>
+# Institute of Marine Research
+# ------------------------------
+
 from typing import Union, Optional, Tuple, List
 
+import numpy as np
+import xarray as xr
+
 Array = Union[List[float], np.ndarray, xr.DataArray]
-Limits = Union[Tuple[int, int], Tuple[int, int, int, int]]
+Limits = Tuple[int, int, int, int]
 
 
 def cellcount(
     X: Array, Y: Array, W: Optional[Array] = None, grid_limits: Optional[Limits] = None
 ) -> xr.DataArray:
-    """Count the (weighted) number of particles in grid cells
+    """Count the (possibly weighted) number of particles in grid cells
 
     Parameters
     ----------
@@ -54,8 +65,4 @@ def cellcount(
         )
 
     coords = dict(Y=np.arange(j0, j1), X=np.arange(i0, i1))
-    C = xr.DataArray(C[0], coords=list(coords.items()), dims=coords.keys())
-    # mypy does not like the line below
-    # C = xr.DataArray(C[0], coords=coords, dims=coords.keys())
-
-    return C
+    return xr.DataArray(C[0], coords=coords, dims=coords.keys())
