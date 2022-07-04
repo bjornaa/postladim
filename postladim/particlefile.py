@@ -197,6 +197,11 @@ class ParticleFile:
             s += f"  {a:16s} {v}\n"
         return s
 
+    def ftime(self, n: int, unit: str = "s") -> str:
+        """Return a nicely formated version of xarray time"""
+        return self.time[n].values.astype(f"M8[{unit}]")
+
+
     def close(self) -> None:
         """Close the particle file"""
         self.ds.close()
