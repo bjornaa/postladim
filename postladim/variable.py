@@ -13,7 +13,7 @@ particle instance to the particle itself.
 """
 
 import datetime
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Tuple
 import numpy as np
 import xarray as xr
 
@@ -134,7 +134,7 @@ class InstanceVariable:
         return self.to_dense()
 
     def __getitem__(
-        self, index: Union[int, slice, tuple[int, int]]
+        self, index: Union[int, slice, Tuple[int, int]]
     ) -> Union[xr.DataArray, "InstanceVariable"]:
         if isinstance(index, int):  # index = time_idx
             return self._sel_time_index(index)

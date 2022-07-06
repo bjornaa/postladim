@@ -105,7 +105,17 @@ def test_time(particle_file):
     """Time handled correctly"""
     with ParticleFile(particle_file) as pf:
         assert pf.time[2] == np.datetime64("2022-01-01 02")
+        assert pf.time[2].values == np.datetime64("2022-01-01 02")
         assert pf.time[3] == np.datetime64("2022-01-01 03")
+
+
+def test_ftime(particle_file):
+    """Formats time correctly"""
+    with ParticleFile(particle_file) as pf:
+        assert pf.ftime(3) == "2022-01-01T03:00:00"
+        assert pf.ftime(3) == str(pf.time[3].values.astype("M8[s]"))
+        assert pf.ftime(3, 'h') == "2022-01-01T03"
+        assert pf.ftime(3, 'h') == str(pf.time[3].values.astype("M8[h]"))
 
 
 def test_variable_type(particle_file):
