@@ -195,9 +195,14 @@ class ParticleVariable:
 def itemstr(v: Array) -> str:
     """Pretty print array item"""
 
-    # Date
+    # Datetime
     if str(v.dtype).startswith("datetime64"):
         return str(v.__array__()).rstrip("0.:T")
+
+    # Timedelta
+    if str(v.dtype).startswith("timedelta64"):
+        return str(v / np.timedelta64(1, "s"))
+
 
     # Number
     return f"{v:g}"
