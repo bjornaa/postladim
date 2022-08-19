@@ -117,7 +117,7 @@ class ParticleFile:
     """
 
     def __init__(self, filename: str) -> None:
-        ds = xr.open_dataset(filename)
+        ds = xr.open_dataset(filename, decode_timedelta=False)
         self.ds = ds
         # End and start of segment with particles at a given time
         try:
@@ -201,7 +201,6 @@ class ParticleFile:
     def ftime(self, n: int, unit: Literal["s", "m", "h"] = "s") -> str:
         """Return a nicely formated version of xarray time"""
         return str(self.time[n].values.astype(f"M8[{unit}]"))
-
 
     def close(self) -> None:
         """Close the particle file"""

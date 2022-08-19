@@ -42,6 +42,7 @@ class InstanceVariable:
         count: np.ndarray,
     ) -> None:
         self.da = data
+        self.dtype = data.dtype
         self.pid = pid
         self.time = time
         self.count = count
@@ -198,11 +199,6 @@ def itemstr(v: Array) -> str:
     # Datetime
     if str(v.dtype).startswith("datetime64"):
         return str(v.__array__()).rstrip("0.:T")
-
-    # Timedelta
-    if str(v.dtype).startswith("timedelta64"):
-        return str(v / np.timedelta64(1, "s"))
-
 
     # Number
     return f"{v:g}"

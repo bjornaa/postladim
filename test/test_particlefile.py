@@ -10,10 +10,11 @@ from postladim import ParticleFile
 def particle_file():
     """Create a small particle file"""
     #
-    #  0   -   -
-    #  1  11   -
-    #  2   -  22
-    #  -   -  23
+    #  time  pid          X            age
+    #   0     0  -  -     0   -   -     0  -  -
+    #   1     0  1  -     1  11   -     1  0  -
+    #   2     0  -  2     2   -  22     2  -  0
+    #   3     -  -  2     -   -  23     -  -  1
     #
     pfile = "test_tmp.nc"
     X = np.array(
@@ -22,6 +23,10 @@ def particle_file():
     Y = np.array(
         [[2, np.nan, np.nan], [3, 8, np.nan], [4, np.nan, 9], [np.nan, np.nan, 10]]
     )
+    age = np.array(
+        [[0, np.nan, np.nan], [1, 0, np.nan], [2, np.nan, 0], [np.nan, np.nan, 1]]
+    )
+
     num_times, num_particles = X.shape
     pid = np.multiply.outer(np.ones(num_times, dtype=int), np.arange(num_particles))
     pid[np.isnan(X)] = -999  # Use a negative integer for undefined
@@ -42,6 +47,8 @@ def particle_file():
         v = nc.createVariable("pid", "i", ("particle_instance",))
         v = nc.createVariable("X", "f4", ("particle_instance",))
         v = nc.createVariable("Y", "f4", ("particle_instance",))
+        v = nc.createVariable("age", "f4", ("particle_instance",))
+        v.units = "hours"
         # Data
         nc.variables["time"][:] = time
         nc.variables["particle_count"][:] = count
@@ -50,6 +57,7 @@ def particle_file():
         nc.variables["pid"][:] = [v for v in pid.flat if v >= 0]
         nc.variables["X"][:] = [v for v in X.flat if not np.isnan(v)]
         nc.variables["Y"][:] = [v for v in Y.flat if not np.isnan(v)]
+        nc.variables["age"][:] = [v for v in age.flat if not np.isnan(v)]
 
     yield pfile
 
@@ -114,14 +122,14 @@ def test_ftime(particle_file):
     with ParticleFile(particle_file) as pf:
         assert pf.ftime(3) == "2022-01-01T03:00:00"
         assert pf.ftime(3) == str(pf.time[3].values.astype("M8[s]"))
-        assert pf.ftime(3, 'h') == "2022-01-01T03"
-        assert pf.ftime(3, 'h') == str(pf.time[3].values.astype("M8[h]"))
+        assert pf.ftime(3, "h") == "2022-01-01T03"
+        assert pf.ftime(3, "h") == str(pf.time[3].values.astype("M8[h]"))
 
 
 def test_variable_type(particle_file):
     """Check that the variables belong to correct type"""
     with ParticleFile(particle_file) as pf:
-        assert pf.instance_variables == ["pid", "X", "Y"]
+        assert pf.instance_variables == ["pid", "X", "Y", "age"]
         assert pf.particle_variables == ["start_time", "location_id"]
 
 
@@ -134,6 +142,17 @@ def test_pid(particle_file):
         assert all(pf.pid[1] == [0, 1])
         assert all(pf.pid[2] == [0, 2])
         assert pf.pid[3] == 2
+
+
+def test_duration(particle_file):
+    """Check reading of time deltas"""
+    # Should return the values as a numbers, not timedelta64
+    with ParticleFile(particle_file) as pf:
+        assert pf.age.da.dtype == np.float32
+        assert pf["age"][0] == 0
+        assert all(pf["age"][1] == [1, 0])
+        assert all(pf.age[2] == [2, 0])
+        assert pf.age[3] == 1
 
 
 def test_position(particle_file):

@@ -35,6 +35,7 @@ def X():
     time = xr.DataArray(time, coords=[("time", time)])
     return InstanceVariable(data=data, pid=pid, time=time, count=count)
 
+
 def test_creation(X):
     """Check that the instance variable is created"""
     assert type(X) == InstanceVariable
@@ -57,6 +58,7 @@ def test_pid(X):
     assert X[3].pid == 2
     assert X.pid[3] == 0  # Note: pid and item does not commute
     assert all(X.pid == [0, 0, 1, 0, 2, 2])
+
 
 def test_unique_pids(X):
     """Check that the particled are identified correctly"""
@@ -101,6 +103,7 @@ def test_select_by_nonexisting_time(X):
     with pytest.raises(KeyError):
         X.sel(time="2020-02-02 02")
 
+
 def test_item(X):
     """Test the item notation with single index"""
     assert X[0] == 0
@@ -116,6 +119,7 @@ def test_time_slice(X):
     assert len(V) == 2
     assert all(V[0] == X[1])
     assert all(V[1] == X[2])
+
 
 def test_item2(X):
     """Test item notation with two variables"""
@@ -137,12 +141,18 @@ def test_time_slice_fail(X):
 
 
 def test_select_by_pid(X):
-    all(X.sel(pid=0) == [0, 1, 2])
-    all(X.sel(pid=0).time == ["2022-05-1600", "2022-05-16 01", "2022-05-16 02"])
-    all(X.sel(pid=1) == [11])
-    all(X.sel(pid=1).time == ["2022-05-16T01"])
-    all(X.sel(pid=2) == [22, 23])
-    all(X.sel(pid=2).time == ["2022-05-16T02:00:00 2022-05-16T03:00:00"])
+    """Select items by pid"""
+    assert all(X.sel(pid=0) == [0, 1, 2])
+    times = ["2022-05-16", "2022-05-16 01", "2022-05-16 02", "2022-05-16T03"]
+    assert all(X.sel(pid=0).time == [np.datetime64(t) for t in times[:3]])
+    assert X.sel(pid=1).time == np.datetime64("2022-05-16 01")
+    assert all(X.sel(pid=2) == [22, 23])
+    assert all(X.sel(pid=2).time == [np.datetime64(t) for t in times[2:]])
+
+
+def test_dtype(X):
+    assert np.issubdtype(X.dtype, np.number)
+    assert X.dtype == np.int64
 
 
 def test_select_by_nonexisting_pid(X):
