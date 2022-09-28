@@ -42,13 +42,12 @@ class InstanceVariable:
         count: np.ndarray,
     ) -> None:
         self.da = data
-        self.dtype = data.dtype
         self.pid = pid
         self.time = time
         self.count = count
         self.end = self.count.cumsum()
         self.start = self.end - self.count
-        self.num_times = len(self.time)
+        self.num_times = len(self.count)
         self.particles = np.unique(self.pid)
         self.num_particles = len(self.particles)  # Number of distinct particles
 
@@ -176,6 +175,10 @@ class ParticleVariable:
     def __init__(self, data: xr.DataArray) -> None:
         self.da = data
 
+    def values(self) -> np.ndarray:
+        """Return the data as a numpy array"""
+        return self.da.values
+
     def __getitem__(self, p: int) -> Any:
         """Get the value of particle with pid = p"""
         return self.da[p]
@@ -199,6 +202,10 @@ def itemstr(v: Array) -> str:
     # Datetime
     if str(v.dtype).startswith("datetime64"):
         return str(v.__array__()).rstrip("0.:T")
+
+    # Timedelta
+    if str(v.dtype).startswith("timedelta64"):
+        return str(v / np.timedelta64(1, "s"))
 
     # Number
     return f"{v:g}"

@@ -1,4 +1,4 @@
 __all__ = ["ParticleFile", "cellcount"]
 
-from .particlefile import ParticleFile
+from .particleset import ParticleSet, ParticleFile
 from .cellcount import cellcount
