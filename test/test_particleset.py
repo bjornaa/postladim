@@ -159,6 +159,32 @@ def test_isel_time(particle_set):
     assert all(ps2.location_id == np.array([10001, 10003]))
 
 
+def test_isel_time_slice(particle_set):
+    """Select a time slice"""
+    ps = particle_set
+    I = slice(0, 2)
+    ps2 = ps.isel(time=I)
+    # Dimensions
+    assert ps2.num_times == 2
+    assert ps2.num_instances == 3
+    assert ps2.num_particles == 2
+    # Time
+    assert all(ps2.time == ps.time.isel(time=I))
+    # Instance variables
+    assert all(ps2.pid == np.array([0, 0, 1]))
+    # assert all(ps2.X == ps.X.isel(time=I))
+    assert all(ps2.X == np.array([0, 1, 11]))
+    # Particle variables
+    assert all(ps2.location_id == np.array([10001, 10002]))
+
+
+def test_isel_time_slice_wrong(particle_set):
+    ps = particle_set
+    I = slice(0, 3, 2)
+    with pytest.raises(IndexError):
+        ps.isel(time=I)
+
+
 def test_sel_time(particle_set):
     ps = particle_set
     time = "2022-01-01 02"
@@ -216,7 +242,15 @@ def test_sel_both(particle_set):
     assert all(ps2.X == np.array([22]))
     # Opposite order
     ps3 = ps.sel(pid=pid).sel(time=time)
-    assert ps3.ds == ps2.ds
+    assert ps2 == ps3
+
+
+def test_item_isel(particle_set):
+    """Testing item notation for time selection"""
+    ps = particle_set
+    # The below does not work, why?
+    assert ps[2] == ps.isel(time=2)
+    assert ps[:2] == ps.isel(time=slice(0, 2))
 
 
 def test_particlefile(particle_set):
@@ -225,4 +259,4 @@ def test_particlefile(particle_set):
     ps.to_netcdf("test.nc")
     pf = ParticleFile("test.nc")
     os.unlink("test.nc")
-    assert pf.ds == ps.ds
+    assert pf == ps

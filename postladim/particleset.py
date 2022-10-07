@@ -11,7 +11,7 @@ This module contains classes:
 from collections import namedtuple
 import datetime
 from types import TracebackType
-from typing import List, Dict, Union, Optional, Literal
+from typing import List, Dict, Union, Optional, Literal, Tuple
 
 import numpy as np
 import xarray as xr
@@ -20,7 +20,6 @@ from .variable import InstanceVariable, ParticleVariable, Variable, arraystr
 
 Timetype = Union[str, np.datetime64, datetime.datetime]
 Array = Union[np.ndarray, xr.DataArray]
-# Variable = Union["InstanceVariable", "ParticleVariable"]
 
 # --------------------------------------------
 
@@ -90,9 +89,6 @@ class ParticleSet:
     def __getattr__(self, var: str) -> Variable:
         return self.variables[var]
 
-    def __getitem__(self, var: str) -> Variable:
-        return self.variables[var]
-
     # Missing: Add global attributes
     def __repr__(self):
         s = "<postladim.ParticleSet>\n"
@@ -132,14 +128,21 @@ class ParticleSet:
         if system is None and "X" in self.instance_variables:
             system = "xy"
         if system == "xy":
-            return Position(self.X.sel(pid=pid), self.Y.sel(pid=pid))
-        return Position(self.lon.sel(pid=pid), self.lat.sel(pid=pid))
+            return Trajectory(self.X.sel(pid=pid), self.Y.sel(pid=pid))
+        return Trajectory(self.lon.sel(pid=pid), self.lat.sel(pid=pid))
 
-    def _sel_time_index(self, n: int) -> "ParticleSet":
-        """Select by time index"""
-        start = self.start[n]
-        end = self.end[n]
-        ds = self.ds.isel(time=[n], particle_instance=slice(start, end))
+    def _sel_time_index(self, index: Union[int, slice]) -> "ParticleSet":
+        if isinstance(index, int):
+            start = self.start[index]
+            end = self.end[index]
+            ds = self.ds.isel(time=[index], particle_instance=slice(start, end))
+        elif isinstance(index, slice):
+            istart, istop, step = index.indices(self.num_times)
+            if step != 1:
+                raise IndexError("step > 1 is not allowed")
+            start = self.start[istart]
+            end = self.end[istop - 1]
+            ds = self.ds.isel(time=index, particle_instance=slice(start, end))
         ds = ds.sel(particle=np.unique(ds.pid))
         return ParticleSet(ds)
 
@@ -179,11 +182,23 @@ class ParticleSet:
         # Neither time or pid
         raise TypeError("Need time or pid argument")
 
+    def __getitem__(
+        self, index: Union[str, int, slice]
+    ) -> Union["Variable", "ParticleSet"]:
+        if isinstance(index, str):
+            return self.variables[index]
+        if isinstance(index, int) or isinstance(index, slice):
+            return self._sel_time_index(index)
+        raise TypeError
+
     def to_netcdf(self, path: str, **args) -> None:
         self.ds.to_netcdf(path, **args)
 
     def close(self):
         self.ds.close()
+
+    def __eq__(self, other: "ParticleSet") -> bool:
+        return self.ds.identical(other.ds)
 
 
 class ParticleFile(ParticleSet):
