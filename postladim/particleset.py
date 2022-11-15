@@ -207,6 +207,7 @@ class ParticleFile(ParticleSet):
     def __init__(self, path: str):
         ds = xr.load_dataset(path)
         super().__init__(ds)
+        self.path = path
 
     # Make ParticleFile a context manager
     def __enter__(self):

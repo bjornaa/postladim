@@ -57,7 +57,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -95,7 +95,7 @@ html_static_path = ["_static"]
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-html_logo = "logo.png"
+# html_logo = "logo.png"
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -115,12 +115,12 @@ latex_elements = {
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',   # Needed for readthedocs
-    "preamble": "".join(
-        (
-            r"\DeclareUnicodeCharacter{F8}{\o}",  # ø
-            r"\DeclareUnicodeCharacter{C5}{\AA}",  # Å
-        )
-    ),
+    # "preamble": "".join(
+    #     (
+    #         r"\DeclareUnicodeCharacter{F8}{\o}",  # ø
+    #         r"\DeclareUnicodeCharacter{C5}{\AA}",  # Å
+    #     )
+    # ),
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -133,8 +133,8 @@ latex_documents = [
     (
         "index",
         "ladim.tex",
-        "LADiM Documentation",
-        r"Bjørn Ådlandsvik <bjorn@imr.no>\\Institute of Marine Research",
+        "PostLADiM Documentation",
+        r"Bjørn Ådlandsvik <bjorn@hi.no>\\Institute of Marine Research",
         "manual",
     )
 ]
