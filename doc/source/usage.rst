@@ -35,7 +35,7 @@ notation ``pf.variables["X"]`` is obsolete.
 
 To get all values of an instance variable `X` at the same timestep use one of:
 
-.. code-block: python
+.. code-block:: python
 
    X = pf.X[n]
    X = pf.X.isel(time=n)

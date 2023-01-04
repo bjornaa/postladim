@@ -257,6 +257,6 @@ def test_particlefile(particle_set):
     """Test writing and reading NetCDF"""
     ps = particle_set
     ps.to_netcdf("test.nc")
-    # pf = ParticleFile("test.nc")
-    # os.unlink("test.nc")
-    #assert pf == ps
+    pf = ParticleFile("test.nc")
+    os.unlink("test.nc")
+    assert pf == ps

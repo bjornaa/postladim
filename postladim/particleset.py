@@ -192,9 +192,11 @@ class ParticleSet:
         raise TypeError
 
     def to_netcdf(self, path: str, **args) -> None:
+        """Save the ParticleSet to a netcdf file"""
         self.ds.to_netcdf(path, **args)
 
     def close(self):
+        """Close the ParticleSet"""
         self.ds.close()
 
     def __eq__(self, other: "ParticleSet") -> bool:
