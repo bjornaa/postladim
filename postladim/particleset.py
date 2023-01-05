@@ -56,10 +56,11 @@ class ParticleSet:
 
     def __init__(self, ds: xr.Dataset):
 
-        if "particle" in ds.dims:
-            self.ds = ds
-        else:
-            self.ds = ds.expand_dims(particle=np.unique(ds.pid).size)
+        self.ds = ds
+        #if "particle" in ds.dims:
+        #    self.ds = ds
+        #else:
+        #    self.ds = ds.expand_dims(particle=np.unique(ds.pid).size)
 
         self.count = np.atleast_1d(ds.particle_count.values)
         self.end = self.count.cumsum()
@@ -70,7 +71,9 @@ class ParticleSet:
         self.time = ds.time
         if self.time.shape == ():
             self.time = self.time.expand_dims("time")
-        self.num_particles = self.ds.particle.size
+        # self.num_particles = self.ds.particle.size
+        self.num_particles = np.unique(self.ds.pid).size
+
 
         # Extract instance and particle variables from the netCDF file
         self.instance_variables: List[str] = []
