@@ -22,8 +22,8 @@ import xarray as xr
 
 from .variable import InstanceVariable, ParticleVariable, Variable, arraystr
 
-Timetype = str | np.datetime64 | datetime.datetime
-Array = np.ndarray | xr.DataArray
+Timetype = Union[str, np.datetime64, datetime.datetime]
+Array = Union[np.ndarray, xr.DataArray]
 
 Position = namedtuple("Position", "X Y")
 Trajectory = namedtuple("Trajectory", "X Y")

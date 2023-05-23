@@ -21,9 +21,8 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-Timetype = str | np.datetime64 | datetime.datetime
-Array = npt.ArrayLike | xr.DataArray
-# Array = np.ndarray | xr.DataArray
+Timetype = Union[str, np.datetime64, datetime.datetime]
+Array = Union[npt.ArrayLike,  xr.DataArray]
 Variable = Union["InstanceVariable", "ParticleVariable"]
 
 
