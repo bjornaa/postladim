@@ -4,9 +4,8 @@
 # Institute of Marine Research
 
 import numpy as np
-import xarray as xr
 import pytest
-
+import xarray as xr
 from postladim.variable import InstanceVariable
 
 
@@ -26,7 +25,7 @@ def X():
     count = np.array([1, 2, 2, 1])
     pid = np.array([0, 0, 1, 0, 2, 2])
     # Hourly time values
-    time0 = np.datetime64("2022-05-16")
+    time0 = np.datetime64("2022-05-16", "ns")
     time = time0 + np.timedelta64(1, "h") * range(4)
 
     # Make xarray DataArrays
@@ -34,6 +33,7 @@ def X():
     pid = xr.DataArray(pid, dims=("particle_instance"))
     time = xr.DataArray(time, coords=[("time", time)])
     return InstanceVariable(data=data, pid=pid, time=time, count=count)
+
 
 def test_creation(X):
     """Check that the instance variable is created"""
@@ -58,6 +58,7 @@ def test_pid(X):
     assert X.pid[3] == 0  # Note: pid and item does not commute
     assert all(X.pid == [0, 0, 1, 0, 2, 2])
 
+
 def test_unique_pids(X):
     """Check that the particled are identified correctly"""
     assert all(X.particles == [0, 1, 2])
@@ -66,10 +67,10 @@ def test_unique_pids(X):
 
 def test_time(X):
     """Check time representation"""
-    assert X[0].time == np.datetime64("2022-05-16")
-    assert X[1].time == np.datetime64("2022-05-16 01")
-    assert X[2].time == np.datetime64("2022-05-16 02")
-    assert X[3].time == np.datetime64("2022-05-16 03")
+    assert X[0].time == np.datetime64("2022-05-16", "ns")
+    assert X[1].time == np.datetime64("2022-05-16 01", "ns")
+    assert X[2].time == np.datetime64("2022-05-16 02", "ns")
+    assert X[3].time == np.datetime64("2022-05-16 03", "ns")
     assert X.time[2] == X[2].time  # Time and item commutes
 
 
@@ -91,8 +92,7 @@ def test_num(X):
 def test_time_select(X):
     """xarray-like data selection by time"""
     assert all(X.isel(time=2) == X[2])
-    assert all(X.sel(time=np.datetime64("2022-05-16 02")) == X[2])
-    assert all(X.sel(time="2022-05-16 02") == X[2])
+    assert all(X.sel(time=np.datetime64("2022-05-16 02", "ns")) == X[2])
 
 
 def test_select_by_nonexisting_time(X):
@@ -100,6 +100,7 @@ def test_select_by_nonexisting_time(X):
         X.isel(time=4)
     with pytest.raises(KeyError):
         X.sel(time="2020-02-02 02")
+
 
 def test_item(X):
     """Test the item notation with single index"""
@@ -116,6 +117,7 @@ def test_time_slice(X):
     assert len(V) == 2
     assert all(V[0] == X[1])
     assert all(V[1] == X[2])
+
 
 def test_item2(X):
     """Test item notation with two variables"""

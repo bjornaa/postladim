@@ -8,17 +8,20 @@ Presently by counting (possibly weighted) particles in grid cells
 # Institute of Marine Research
 # ------------------------------
 
-from typing import Union, Optional, Tuple, List
+from typing import Optional, Union
 
 import numpy as np
 import xarray as xr
 
-Array = Union[List[float], np.ndarray, xr.DataArray]
-Limits = Tuple[int, int, int, int]
+Array = Union[list[float], np.ndarray, xr.DataArray]
+Limits = tuple[int, int, int, int]
 
 
 def cellcount(
-    X: Array, Y: Array, W: Optional[Array] = None, grid_limits: Optional[Limits] = None
+    X: Array,
+    Y: Array,
+    W: Optional[Array] = None,
+    grid_limits: Optional[Limits] = None,
 ) -> xr.DataArray:
     """Count the (possibly weighted) number of particles in grid cells
 
@@ -61,7 +64,10 @@ def cellcount(
         C = np.histogram2d(np.asarray(Y), np.asarray(X), bins=[y_edges, x_edges])
     else:
         C = np.histogram2d(
-            np.asarray(Y), np.asarray(X), weights=np.asarray(W), bins=[y_edges, x_edges]
+            np.asarray(Y),
+            np.asarray(X),
+            weights=np.asarray(W),
+            bins=[y_edges, x_edges],
         )
 
     coords = dict(Y=np.arange(j0, j1), X=np.arange(i0, i1))

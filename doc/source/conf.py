@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -136,7 +135,7 @@ latex_documents = [
         "PostLADiM Documentation",
         r"Bjørn Ådlandsvik <bjorn@hi.no>\\Institute of Marine Research",
         "manual",
-    )
+    ),
 ]
 
 
@@ -161,7 +160,7 @@ texinfo_documents = [
         "LADiM",
         "One line description of project.",
         "Miscellaneous",
-    )
+    ),
 ]
 
 # -- Extension configuration -------------------------------------------------

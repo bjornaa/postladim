@@ -1,4 +1,10 @@
-__all__ = ["ParticleFile", "cellcount"]
+"""postladim
 
-from .particleset import ParticleSet, ParticleFile
+Python package for analysing LADiM output
+
+"""
+
+__all__ = ["ParticleSet", "ParticleFile", "cellcount"]
+
 from .cellcount import cellcount
+from .particleset import ParticleFile, ParticleSet

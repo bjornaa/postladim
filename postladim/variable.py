@@ -12,13 +12,18 @@ particle instance to the particle itself.
 
 """
 
+from __future__ import annotations
+
 import datetime
-from typing import Any, Union, Optional, Tuple
+from typing import Any, Optional, Union
+
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 
-Timetype = Union[str, np.datetime64, datetime.datetime]
-Array = Union[np.ndarray, xr.DataArray]
+Timetype = str | np.datetime64 | datetime.datetime
+Array = npt.ArrayLike | xr.DataArray
+# Array = np.ndarray | xr.DataArray
 Variable = Union["InstanceVariable", "ParticleVariable"]
 
 
@@ -30,7 +35,7 @@ class InstanceVariable:
     conditions like temperature or biological variables like size, weight, age.
     Note that the particle identifier, pid, is an InstanceVariable.
 
-    The implementation tries to emulate a xarray DataArray.
+    The implementation tries to emulate an xarray DataArray.
 
     """
 
@@ -66,7 +71,7 @@ class InstanceVariable:
         V = V.swap_dims({"particle_instance": "pid"})
         return V
 
-    def _sel_time_slice_index(self, tslice: slice) -> "InstanceVariable":
+    def _sel_time_slice_index(self, tslice: slice) -> InstanceVariable:
         """Take a time slice based on time indices"""
         n = self.num_times
         istart, istop, step = tslice.indices(n)
@@ -105,7 +110,10 @@ class InstanceVariable:
         return self._sel_time_index(time)
 
     def sel(
-        self, *, pid: Optional[int] = None, time: Optional[Timetype] = None
+        self,
+        *,
+        pid: Optional[int] = None,
+        time: Optional[Timetype] = None,
     ) -> xr.DataArray:
         """Select from InstanceVariable by value of pid or time or both"""
         if pid is not None and time is None:
@@ -134,8 +142,9 @@ class InstanceVariable:
         return self.to_dense()
 
     def __getitem__(
-        self, index: Union[int, slice, Tuple[int, int]]
-    ) -> Union[xr.DataArray, "InstanceVariable"]:
+        self,
+        index: Union[int, slice, tuple[int, int]],
+    ) -> Union[xr.DataArray, InstanceVariable, float]:
         if isinstance(index, int):  # index = time_idx
             return self._sel_time_index(index)
         if isinstance(index, slice):
@@ -167,6 +176,7 @@ class InstanceVariable:
 
 # --------------------------------------------
 
+
 # Need this?, just use the DataArray
 class ParticleVariable:
     """Particle variable, time-independent"""
@@ -178,6 +188,9 @@ class ParticleVariable:
     def values(self) -> np.ndarray:
         """Return the data as a numpy array"""
         return self.da.values
+
+    def sel(self, pid: int) -> xr.DataArray:
+        return self.da.sel(pid=pid)
 
     def __getitem__(self, p: int) -> Any:
         """Get the value of particle with pid = p"""
@@ -196,7 +209,7 @@ class ParticleVariable:
         return len(self.da)
 
 
-def itemstr(v: Array) -> str:
+def itemstr(v: np.ndarray) -> str:
     """Pretty print array item"""
 
     # Datetime

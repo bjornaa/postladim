@@ -7,21 +7,23 @@ This module contains classes:
 
 """
 
+from __future__ import annotations
 
-from collections import namedtuple
 import datetime
-from types import TracebackType
-from typing import List, Dict, Union, Optional, Literal, Tuple
+from collections import namedtuple
+from typing import TYPE_CHECKING, Literal, Optional, Union
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
 
 import numpy as np
 import xarray as xr
 
 from .variable import InstanceVariable, ParticleVariable, Variable, arraystr
 
-Timetype = Union[str, np.datetime64, datetime.datetime]
-Array = Union[np.ndarray, xr.DataArray]
-
-# --------------------------------------------
+Timetype = str | np.datetime64 | datetime.datetime
+Array = np.ndarray | xr.DataArray
 
 Position = namedtuple("Position", "X Y")
 Trajectory = namedtuple("Trajectory", "X Y")
@@ -51,15 +53,13 @@ Trajectory = namedtuple("Trajectory", "X Y")
 
 
 class ParticleSet:
-
     # ds must have particle_count, time, pid
 
     def __init__(self, ds: xr.Dataset):
-
         self.ds = ds
-        #if "particle" in ds.dims:
+        # if "particle" in ds.dims:
         #    self.ds = ds
-        #else:
+        # else:
         #    self.ds = ds.expand_dims(particle=np.unique(ds.pid).size)
 
         self.count = np.atleast_1d(ds.particle_count.values)
@@ -74,20 +74,24 @@ class ParticleSet:
         # self.num_particles = self.ds.particle.size
         self.num_particles = np.unique(self.ds.pid).size
 
-
         # Extract instance and particle variables from the netCDF file
-        self.instance_variables: List[str] = []
-        self.particle_variables: List[str] = []
-        self.variables: Dict[str, Variable] = {}
+        self.instance_variables: list[str] = []
+        self.particle_variables: list[str] = []
+        self.variables: dict[str, Variable] = {}
+        # self.variables: dict[Hashable, Variable] = {}
         for var in ds.variables:
-            if "particle_instance" in ds[var].dims:
-                self.instance_variables.append(var)
-                self.variables[var] = InstanceVariable(
-                    ds[var], ds.pid, ds.time, self.count
+            svar = str(var)  # to keep mypy happy (var is already a string)
+            if "particle_instance" in ds[svar].dims:
+                self.instance_variables.append(svar)
+                self.variables[svar] = InstanceVariable(
+                    ds[svar],
+                    ds.pid,
+                    ds.time,
+                    self.count,
                 )
-            elif "particle" in ds[var].dims:
-                self.particle_variables.append(var)
-                self.variables[var] = ParticleVariable(ds[var])
+            elif "particle" in ds[svar].dims:
+                self.particle_variables.append(svar)
+                self.variables[svar] = ParticleVariable(ds[svar])
 
     def __getattr__(self, var: str) -> Variable:
         return self.variables[var]
@@ -116,25 +120,46 @@ class ParticleSet:
         return str(self.time[n].values.astype(f"M8[{unit}]"))
 
     def position(
-        self, time: int, system: Optional[Literal["xy", "lonlat"]] = None
+        self,
+        time: int,
+        system: Literal["xy", "lonlat"] = "xy",
     ) -> Position:
         """Extract the positions of all particles at given time step"""
-        if system is None and "X" in self.instance_variables:
-            system = "xy"
-        if system == "xy":
-            return Position(self.X[time], self.Y[time])
-        return Position(self.lon[time], self.lat[time])
+
+        if (
+            system == "xy"
+            and "X" in self.instance_variables
+            and "Y" in self.instance_variables
+        ):
+            return Position(self["X"][time], self["Y"][time])
+        if (
+            system == "lonlat"
+            and "lon" in self.instance_variables
+            and "lat" in self.instance_variables
+        ):
+            return Position(self.lon[time], self.lat[time])
+        raise TypeError
 
     def trajectory(
-        self, pid: int, system: Optional[Literal["xy", "lonlat"]] = None
+        self,
+        pid: int,
+        system: Literal["xy", "lonlat"] = "xy",
     ) -> Trajectory:
-        if system is None and "X" in self.instance_variables:
-            system = "xy"
-        if system == "xy":
-            return Trajectory(self.X.sel(pid=pid), self.Y.sel(pid=pid))
-        return Trajectory(self.lon.sel(pid=pid), self.lat.sel(pid=pid))
+        if (
+            system == "xy"
+            and "X" in self.instance_variables
+            and "Y" in self.instance_variables
+        ):
+            return Trajectory(self["X"].sel(pid=pid), self["Y"].sel(pid=pid))
+        if (
+            system == "lonlat"
+            and "lon" in self.instance_variables
+            and "lat" in self.instance_variables
+        ):
+            return Trajectory(self.lon.sel(pid=pid), self.lat.sel(pid=pid))
+        raise TypeError
 
-    def _sel_time_index(self, index: Union[int, slice]) -> "ParticleSet":
+    def _sel_time_index(self, index: Union[int, slice]) -> ParticleSet:
         if isinstance(index, int):
             start = self.start[index]
             end = self.end[index]
@@ -149,14 +174,14 @@ class ParticleSet:
         ds = ds.sel(particle=np.unique(ds.pid))
         return ParticleSet(ds)
 
-    def _sel_time_value(self, time_val: Timetype) -> "ParticleSet":
+    def _sel_time_value(self, time_val: Timetype) -> ParticleSet:
         try:
             idx = self.time.get_index("time").get_loc(time_val)
         except KeyError as e:
             raise KeyError(f"No data for time = {time_val}") from e
         return self._sel_time_index(idx)
 
-    def _sel_pid_value(self, pid: int) -> "ParticleSet":
+    def _sel_pid_value(self, pid: int) -> ParticleSet:
         """Selection based on single pid value"""
         (I,) = np.nonzero(self.pid.values == pid)
         if len(I) == 0:
@@ -168,13 +193,16 @@ class ParticleSet:
         ds["particle_count"] = xr.DataArray(np.ones(t1 - t0, dtype=int), dims=["time"])
         return ParticleSet(ds)
 
-    def isel(self, *, time: int) -> "ParticleSet":
+    def isel(self, *, time: int) -> ParticleSet:
         """Selection by time step number (time index)"""
         return self._sel_time_index(time)
 
     def sel(
-        self, *, pid: Optional[int] = None, time: Optional[Timetype] = None
-    ) -> "ParticleSet":
+        self,
+        *,
+        pid: Optional[int] = None,
+        time: Optional[Timetype] = None,
+    ) -> ParticleSet:
         """Select by value of pid or time or both"""
         if pid is not None and time is None:
             return self._sel_pid_value(pid)
@@ -186,11 +214,12 @@ class ParticleSet:
         raise TypeError("Need time or pid argument")
 
     def __getitem__(
-        self, index: Union[str, int, slice]
-    ) -> Union["Variable", "ParticleSet"]:
+        self,
+        index: Union[str, int, slice],
+    ) -> Union[Variable, ParticleSet]:
         if isinstance(index, str):
             return self.variables[index]
-        if isinstance(index, int) or isinstance(index, slice):
+        if isinstance(index, (int, slice)):
             return self._sel_time_index(index)
         raise TypeError
 
@@ -202,7 +231,7 @@ class ParticleSet:
         """Close the ParticleSet"""
         self.ds.close()
 
-    def __eq__(self, other: "ParticleSet") -> bool:
+    def __eq__(self, other: ParticleSet) -> bool:
         return self.ds.identical(other.ds)
 
 
