@@ -1,4 +1,6 @@
 target-version = "py39"
+
+[lint]
 select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
@@ -50,5 +52,6 @@ ignore = [
     "C408",  # Prefer dict() instead of {}
     "SIM300",  # yoda misunderstandings
     "S101",   # Allow assert in tests
+    "COM812",
    ]
 

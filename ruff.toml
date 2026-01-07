@@ -1,5 +1,36 @@
-target-version = "py39"
+target-version = "py314"
+
+[lint]
 select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    # "C901",
+    "I",  # isort
+    # "N",  # pep8 naming
+    # "D",  # pydocstyle
+    "UP",  # pyupgrade
+    "YTT",
+    # "ANN", # flake8-annotations
+    "S",
+    "BLE",
+    "FBT",
+    "B",  # flake8-bugbear
+    "A",
+    "COM",
+    "C4",
+    # "EM",  # flake8-errmsg, fix later
+    "EXE",
+    "ISC",
+    "G",
+    "PIE",
+    "T20",   # flake8-print
+    "Q",
+    "RSE",
+    "SLF",
+    "SIM",   # flake8_simplify
+    "TCH",
+    # "ARG",select
     "F",  # pyflakes
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -35,6 +66,51 @@ select = [
     "PLE",
     # "PLR",
     "PLW",
+    # "TRY",PTH
+    "NPY",  # numpy
+    "RUF",
+    # "PD",  # pandasselect
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    # "C901",
+    "I",  # isort
+    # "N",  # pep8 naming
+    # "D",  # pydocstyle
+    "UP",  # pyupgrade
+    "YTT",
+    # "ANN", # flake8-annotations
+    "S",
+    "BLE",
+    "FBT",
+    "B",  # flake8-bugbear
+    "A",
+    "COM",
+    "C4",
+    # "EM",  # flake8-errmsg - fix later
+    "EXE",
+    "ISC",
+    "G",
+    "PIE",
+    "T20",   # flake8-print
+    "Q",
+    "RSE",
+    "SLF",
+    "SIM",   # flake8_simplify
+    "TCH",
+    # "ARG",
+    "PTH",
+    # "PD",  # pandas_vet, fix later
+    "PLC",
+    "PLE",
+    # "PLR",
+    "PLW",
+    # "TRY",
+    "NPY",  # numpy
+    "RUF",  # vet, fix later
+    "PLE",
+    # "PLR",
+    "PLW",
     # "TRY",
     "NPY",  # numpy
     "RUF",
@@ -49,6 +125,7 @@ ignore = [
     "UP007",
     "C408",  # Prefer dict() instead of {}
     "SIM300",  # yoda misunderstandings
-    # "S101"
-   ]
+    # "S101",
+    "COM812",
+]
 

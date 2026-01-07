@@ -20,13 +20,13 @@
 
 project = "postladim"
 author = "Bjørn Ådlandsvik"
-copyright = "2022, Institute of Marine Research"
+copyright = "2022, Institute of Marine Research"  # noqa: A001
 
 # The short X.Y version
 version = "2.0"
 # The full version, including alpha/beta/rc tags
 release = "2.0.0"
-today_fmt = "%Y-%m-%d"
+today_fmt = "%Y-%m-%d
 
 # -- General configuration ---------------------------------------------------
 
@@ -107,7 +107,7 @@ htmlhelp_basename = "LADiMdoc"
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    "papersize": "a4paper",
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
@@ -131,7 +131,7 @@ latex_elements = {
 latex_documents = [
     (
         "index",
-        "ladim.tex",
+        "postladim.tex",
         "PostLADiM Documentation",
         r"Bjørn Ådlandsvik <bjorn@hi.no>\\Institute of Marine Research",
         "manual",
@@ -143,7 +143,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "ladim", "LADiM Documentation", [author], 1)]
+man_pages = [(master_doc, "postladim", "PostLADiM Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -154,10 +154,10 @@ man_pages = [(master_doc, "ladim", "LADiM Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "LADiM",
-        "LADiM Documentation",
+        "PostLADiM",
+        "PostLADiM Documentation",
         author,
-        "LADiM",
+        "PostLADiM",
         "One line description of project.",
         "Miscellaneous",
     ),

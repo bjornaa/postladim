@@ -26,7 +26,7 @@ def X():
     pid = np.array([0, 0, 1, 0, 2, 2])
     # Hourly time values
     time0 = np.datetime64("2022-05-16", "ns")
-    time = time0 + np.timedelta64(1, "h") * range(4)
+    time = time0 + np.timedelta64(1, "h") * np.arange(4)
 
     # Make xarray DataArrays
     data = xr.DataArray(data, dims=("particle_instance"))
@@ -37,7 +37,7 @@ def X():
 
 def test_creation(X):
     """Check that the instance variable is created"""
-    assert type(X) == InstanceVariable
+    assert isinstance(X, InstanceVariable)
 
 
 def test_data(X):
@@ -113,7 +113,7 @@ def test_item(X):
 def test_time_slice(X):
     """Test item notation with slice"""
     V = X[1:3]
-    assert type(V) == InstanceVariable
+    assert isinstance(V, InstanceVariable)
     assert len(V) == 2
     assert all(V[0] == X[1])
     assert all(V[1] == X[2])
@@ -162,5 +162,5 @@ def test_to_dense(X):
     ]
     # all = fails because of NaNs, use np.testing instead
     np.testing.assert_array_equal(A, expected)
-    assert type(A) == xr.DataArray
+    assert isinstance(A, xr.DataArray)
     assert set(A.dims) == {"time", "pid"}

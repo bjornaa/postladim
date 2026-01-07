@@ -1,5 +1,6 @@
 """Check the ParticleSet class"""
 
+import os
 
 import numpy as np
 import pytest
@@ -34,7 +35,7 @@ def particle_set():
             start_time=(
                 "particle",
                 np.datetime64("2022-01-01", "ns")
-                + [np.timedelta64(v, "h") for v in range(num_particles)],
+                + np.array([np.timedelta64(v, "h") for v in range(num_particles)]),
             ),
             location_id=("particle", [10001, 10002, 10003]),
             pid=("particle_instance", pid1),
@@ -43,7 +44,7 @@ def particle_set():
         ),
         coords=dict(
             time=np.datetime64("2022-01-01", "ns")
-            + [np.timedelta64(v, "s") for v in time],
+            + np.array([np.timedelta64(v, "s") for v in time]),
             particle=np.unique(pid1),
         ),
     )
@@ -257,5 +258,5 @@ def test_particlefile(particle_set):
     ps = particle_set
     ps.to_netcdf("test.nc")
     # pf = ParticleFile("test.nc")
-    # os.unlink("test.nc")
+    os.unlink("test.nc")
     # assert pf == ps

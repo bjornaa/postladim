@@ -8,20 +8,19 @@ Presently by counting (possibly weighted) particles in grid cells
 # Institute of Marine Research
 # ------------------------------
 
-from typing import Optional, Union
 
 import numpy as np
 import xarray as xr
 
-Array = Union[list[float], np.ndarray, xr.DataArray]
+Array = list[float] | np.ndarray | xr.DataArray
 Limits = tuple[int, int, int, int]
 
 
 def cellcount(
     X: Array,
     Y: Array,
-    W: Optional[Array] = None,
-    grid_limits: Optional[Limits] = None,
+    W: Array | None = None,
+    grid_limits: Limits | None = None,
 ) -> xr.DataArray:
     """Count the (possibly weighted) number of particles in grid cells
 
@@ -48,10 +47,10 @@ def cellcount(
     # Subgrid specification
 
     if grid_limits is None:
-        i0 = int(round(np.min(X)))
-        i1 = int(round(np.max(X))) + 1
-        j0 = int(round(np.min(Y)))
-        j1 = int(round(np.max(Y))) + 1
+        i0 = round(min(X))
+        i1 = round(np.max(X)) + 1
+        j0 = round(np.min(Y))
+        j1 = round(np.max(Y)) + 1
     elif len(grid_limits) == 4:
         i0, i1, j0, j1 = grid_limits
     else:

@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import datetime
 from collections import namedtuple
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from types import TracebackType
-
 
 import numpy as np
 import xarray as xr
@@ -52,7 +52,7 @@ Trajectory = namedtuple("Trajectory", "X Y")
 """
 
 
-class ParticleSet:
+class ParticleSet:  # noqa: PLW1641
     # ds must have particle_count, time, pid
 
     def __init__(self, ds: xr.Dataset):
@@ -183,7 +183,7 @@ class ParticleSet:
 
     def _sel_pid_value(self, pid: int) -> ParticleSet:
         """Selection based on single pid value"""
-        (I,) = np.nonzero(self.pid.values == pid)
+        (I,) = np.nonzero(self.pid.values == pid)  # type: ignore
         if len(I) == 0:
             raise KeyError(f"No data for pid = {pid}")
         # Limit actual time
@@ -200,8 +200,8 @@ class ParticleSet:
     def sel(
         self,
         *,
-        pid: Optional[int] = None,
-        time: Optional[Timetype] = None,
+        pid: int | None = None,
+        time: Timetype | None = None,
     ) -> ParticleSet:
         """Select by value of pid or time or both"""
         if pid is not None and time is None:
@@ -231,14 +231,14 @@ class ParticleSet:
         """Close the ParticleSet"""
         self.ds.close()
 
-    def __eq__(self, other: ParticleSet) -> bool:
+    def __eq__(self, other: ParticleSet) -> bool:  # type: ignore
         return self.ds.identical(other.ds)
 
 
 class ParticleFile(ParticleSet):
     """Convenience class, for backwards compatibility"""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         ds = xr.load_dataset(path)
         super().__init__(ds)
         self.path = path
@@ -249,8 +249,8 @@ class ParticleFile(ParticleSet):
 
     def __exit__(
         self,
-        exc_type: Union[type, None],
-        exc_val: Union[BaseException, None],
-        exc_tb: Union[TracebackType, None],
+        exc_type: type | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         self.close()

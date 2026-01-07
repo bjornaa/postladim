@@ -1,3 +1,4 @@
+import numpy as np
 from postladim import cellcount
 
 # Miss some failing tests
@@ -42,7 +43,7 @@ def test_weight():
     """Test weighted counting"""
     X = [11.2, 11.8, 12.2, 12.3]
     Y = [0.8, 1.2, 1.4, 3.1]
-    W = [1, 2, 3, 4]
+    W = np.array([1, 2, 3, 4])
     C = cellcount(X, Y, W)
     assert C.shape == (3, 2)
     assert C.sum() == sum(W)

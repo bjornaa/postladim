@@ -15,7 +15,7 @@ particle instance to the particle itself.
 from __future__ import annotations
 
 import datetime
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -49,6 +49,7 @@ class InstanceVariable:
         self.da = data
         self.pid = pid
         self.time = time
+
         self.count = count
         self.end = self.count.cumsum()
         self.start = self.end - self.count
@@ -88,7 +89,7 @@ class InstanceVariable:
 
     def _sel_time_value(self, time_val: Timetype) -> xr.DataArray:
         try:
-            idx = self.time.get_index("time").get_loc(time_val)
+            idx: int = self.time.get_index("time").get_loc(time_val)  # type: ignore
         except KeyError as e:
             raise KeyError(f"No data for time = {time_val}") from e
         return self._sel_time_index(idx)
@@ -112,8 +113,8 @@ class InstanceVariable:
     def sel(
         self,
         *,
-        pid: Optional[int] = None,
-        time: Optional[Timetype] = None,
+        pid: int | None = None,
+        time: Timetype | None = None,
     ) -> xr.DataArray:
         """Select from InstanceVariable by value of pid or time or both"""
         if pid is not None and time is None:
